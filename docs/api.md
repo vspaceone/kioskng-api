@@ -36,6 +36,9 @@ Data will be archived in S3.
 
 This will improve cost effectiveness, query performance while keeping full transaction history for users.
 
+Additionally, in case we fall short to properly calculate the sum of all transaction amounts correctly during the month (for example because of a very unlikely situation of concurrent transactions for the same account) we wil recalculate the sum for validity.
+If any differences are spotted, then an INCONSISTENCY_CORRECTION transaction will be created so a correct balance will again be displayed from that point on.
+
 |Verb|Resource|Description|
 |-:|-|-|
 |GET   | /transactions | Get all |
@@ -51,7 +54,7 @@ This will improve cost effectiveness, query performance while keeping full trans
   "account_id": "ACCOUNT_UUID",
   "transaction_amount": -5,
   "transaction_result": 10,
-  "action": "BUY_PRODUCT|WITHDRAW|DEPOSIT",
+  "action": "BUY_PRODUCT|WITHDRAW|DEPOSIT|CANCEL|INCONSISTENCY_CORRECTION",
   "authentication": "USERNAME_PASSWORD|MEDIA_PIN|MEDIA_ONLY,
   "location": "APP|PoS",
   "device_name": "Android ABC|PoS in the Lab"
