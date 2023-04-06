@@ -43,7 +43,7 @@ of a user account through through multiple different media ids.
 |Verb|Resource|Description|
 |-:|-|-|
 |GET   | /media | Get all |
-|GET   | /media/id | Get by ID |
+|GET   | /media/&lt;id&gt; | Get by ID |
 |GET   | /media?media_identification=&lt;mid&gt;&media_type=&lt;mtype&gt; | Get by media specific id and type |
 |PUT   | /media | Create mapping |
 |DELETE| /media/&lt;id&gt; | Delete mapping |
