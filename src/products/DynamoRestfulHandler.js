@@ -2,10 +2,11 @@ const AWS = require('aws-sdk');
 
 class DynamoRestfulHandler {
 
-    constructor(tableName) {
+    constructor(tableName, payloadValidator) {
         this.docClient = new AWS.DynamoDB.DocumentClient();
         this.defaultPageSize = 10;
         this.tableName = tableName;
+        this.payloadValidator = payloadValidator;
     }
 
     async handleApiEvent(event){
@@ -61,7 +62,17 @@ class DynamoRestfulHandler {
 
     async handlePut(event){
         const item = JSON.parse(event.body)
-        
+        const validate = this.payloadValidator.generatePutProductValidator();
+
+        const valid = validate(item);
+
+        if (!valid) {
+            return {
+                statusCode: 422,
+                body: JSON.stringify(validate.errors)
+            }
+        }
+
         let response = await this.docClient.put({
             TableName: this.tableName,
             Item: item
