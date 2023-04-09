@@ -3,10 +3,11 @@
 const { DynamoRestfulHandler } = require('./DynamoRestfulHandler.js');
 const Ajv = require('ajv');
 
+const region = "eu-north-1";
 const tableName = "products";
 
 exports.handler = async (event, context) => {
-    const restHandler = new DynamoRestfulHandler(tableName, new PayloadValidators());
+    const restHandler = new DynamoRestfulHandler(region, tableName, new PayloadValidators());
     return await restHandler.handleApiEvent(event);
 };
 

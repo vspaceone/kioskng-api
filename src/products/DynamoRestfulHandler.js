@@ -1,3 +1,5 @@
+'use strict';
+
 const { 
     DynamoDBClient, 
     GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand } = require("@aws-sdk/client-dynamodb");
@@ -5,8 +7,8 @@ const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
 class DynamoRestfulHandler {
 
-    constructor(tableName, payloadValidator) {
-        this.ddClient = new DynamoDBClient({region: "eu-north-1"})
+    constructor(region, tableName, payloadValidator) {
+        this.ddClient = new DynamoDBClient({region: region})
         this.defaultPageSize = 10;
         this.tableName = tableName;
         this.payloadValidator = payloadValidator;
@@ -49,8 +51,7 @@ class DynamoRestfulHandler {
         }
 
         return {
-            statusCode: 201,
-            body: response
+            statusCode: 201
         }
     }
 
