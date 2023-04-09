@@ -1,0 +1,4 @@
+{
+  "httpMethod": "PUT",
+  "body": "{\"media_identification\":\"123456789\",\"account_id\":\"15224736-f22c-4fb5-9496-ff7edb06c5d5\",\"media_type\":\"RFID_ID\"}"
+}

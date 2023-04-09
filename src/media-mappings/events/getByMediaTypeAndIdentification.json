@@ -1,0 +1,7 @@
+{
+  "httpMethod": "GET",
+  "queryStringParameters": {
+    "media_identification": "12345678",
+    "media_type": "RFID_ID"
+  }
+}

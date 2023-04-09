@@ -1,12 +1,21 @@
+'use strict';
+
 const AWS = require('aws-sdk');
+const { 
+    DynamoDBClient, 
+    GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand, QueryCommand,
+    ConditionalCheckFailedException } = require("@aws-sdk/client-dynamodb");
+const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 const crypto = require('crypto')
 
 class DynamoRestfulHandler {
 
-    constructor(tableName) {
+    constructor(region, tableName, payloadValidator) {
         this.docClient = new AWS.DynamoDB.DocumentClient();
+        this.ddClient = new DynamoDBClient({region: region});
         this.defaultPageSize = 10;
         this.tableName = tableName;
+        this.payloadValidator = payloadValidator;
     }
 
     async handleApiEvent(event){
@@ -29,22 +38,23 @@ class DynamoRestfulHandler {
     // ##################
 
     async handleDelete(event){
-        if (event && event.pathParameters && event.pathParameters.id){
-            try {
-                const response = await this.docClient.delete({TableName: this.tableName, Key: {id: event.pathParameters.id}}).promise()
-                return {
-                    statusCode: 201,
-                    body: response
-                }
-            } catch (err) {
-                return {
-                    statusCode: 500,
-                    body: response
-                }
-            }   
+        if (!event || !event.pathParameters || !event.pathParameters.id){
+            return { statusCode: 404 }
         }
-        
-        return { statusCode: 404 }
+
+        const command = new DeleteItemCommand({TableName: this.tableName, Key: marshall({id: event.pathParameters.id})});
+        let response;
+
+        try {
+            response = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        return { statusCode: 201 }
     }
 
     // ################
@@ -53,18 +63,6 @@ class DynamoRestfulHandler {
 
     // not required for now?
     async handlePost(event){
-        // TODO only do patch? Do a get and then a put after modification?
-        /*const item = JSON.parse(event.body)
-
-        if (event && event.pathParameters && event.pathParameters.id){
-            let response = await this.docClient.({
-                TableName: this.tableName,
-                Item: item
-            }).promise()
-    
-        }*/
-
-
         return { statusCode: 501 }
     }
 
@@ -74,18 +72,55 @@ class DynamoRestfulHandler {
 
     async handlePut(event){
         const item = JSON.parse(event.body)
+        const validate = this.payloadValidator.generatePutMediaMappingValidator();
+
+        const valid = validate(item);
+
+        if (!valid) {
+            return {
+                statusCode: 422,
+                body: JSON.stringify(validate.errors)
+            }
+        }
+
+        if (await this.conflictingMappingExists(item)){
+            return {
+                statusCode: 422,
+                body: {"error": "Exact media-id with that media type is already mapped."}
+            }
+        }
 
         item.id = crypto.randomUUID();
         
-        let response = await this.docClient.put({
+        const command = new PutItemCommand({
             TableName: this.tableName,
-            Item: item
-        }).promise()
+            Item: marshall(item),
+            ConditionExpression: "attribute_not_exists(id)"
+        });
+
+        let response;
+        try {
+            response = await this.ddClient.send(command)
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
 
         return {
-            statusCode: 201,
-            body: response
+            statusCode: 200,
+            body: item
         }
+    }
+
+    async conflictingMappingExists(item){
+        // TODO this is inefficient, but not sure if there's any way to get this made within a condition expression
+        const response = await this.getItemByMediaTypeAndIdentification(item.media_type, item.media_identification);
+        if (response && response.statusCode === 200){
+            return true;
+        }
+        return false;
     }
 
     // ###############
@@ -103,29 +138,82 @@ class DynamoRestfulHandler {
     }
 
     async getItemByID(id){
-        let item = await this.docClient.get({TableName: this.tableName, Key: { id: id }}).promise()
+        const command = new GetItemCommand({TableName: this.tableName, Key: marshall({ id: id })})
+        let item;
+        
+        try {
+            item = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        if (!item.Item){
+            return {
+                statusCode: 404
+            };
+        }
 
         return {
             statusCode: 200,
-            body: JSON.stringify(item.Item)
+            body: JSON.stringify(unmarshall(item.Item))
         };
     }
 
-    async getItemByMediaTypeAndIdentification(type, identification){
-        let item = await this.docClient.get({TableName: this.tableName, Key: { media_identification: identification, media_type: type }}).promise()
+    async getItemByMediaTypeAndIdentification(media_type, media_identification){
+        const command = new QueryCommand(
+            {
+                TableName: this.tableName,
+                IndexName: 'media_identification-media_type-index',
+                KeyConditionExpression: 'media_identification = :mi AND media_type = :mt',
+                ExpressionAttributeValues: marshall({
+                    ":mi": media_identification,
+                    ":mt": media_type
+                })
+            });
+        let item;
+        
+        try {
+            item = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        const unmarshalledItems = item.Items.map((i) => unmarshall(i));
+
+        if (unmarshalledItems.length === 0){
+            return { statusCode: 404 }
+        }
 
         return {
             statusCode: 200,
-            body: JSON.stringify(item.Item)
+            body: JSON.stringify(unmarshalledItems[0])
         };
     }
 
     async getItems(){
-        let item = await this.docClient.scan({TableName: this.tableName}).promise()
+        const command = new ScanCommand({TableName: this.tableName});
+        let item;
+
+        try {
+            item = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        const unmarshalledItems = item.Items.map((i) => unmarshall(i));
         
         const response = {
             statusCode: 200,
-            body: JSON.stringify(item.Items)
+            body: JSON.stringify(unmarshalledItems)
         };
         return response;
     }
