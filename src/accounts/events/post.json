@@ -1,0 +1,7 @@
+{
+  "httpMethod": "POST",
+  "pathParameters": {
+    "id": "32194315-e0db-4045-b4d8-5642c840d7c1"
+  },
+  "body": "{\"fullname\":\"Klaus Klabustermann\",\"street\":\"Klaus-Kinski-Allee 321\",\"post_code\":\"78048\",\"city\":\"Villingen-Schwenningen\",\"pin\":\"0000\"}"
+}

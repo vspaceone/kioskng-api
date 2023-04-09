@@ -9,7 +9,7 @@ Globals:
     Timeout: 3
 
 Resources:
-  ProductDynamoDBAccess:
+  ProductsDynamoDBAccess:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       Description: ProductDynamoDBAccess
@@ -53,4 +53,50 @@ Resources:
       Architectures:
         - x86_64
       Policies:
-        - !Ref ProductDynamoDBAccess
+        - !Ref ProductsDynamoDBAccess
+  
+  AccountsDynamoDBAccess:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: ProductDynamoDBAccess
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ReadWriteTable
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+            Resource: arn:aws:dynamodb:*:*:table/accounts
+          - Sid: GetStreamRecords
+            Effect: Allow
+            Action:
+              - dynamodb:GetRecords
+            Resource: arn:aws:dynamodb:*:*:table/accounts/stream/*
+          - Sid: WriteLogStreamsAndGroups
+            Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: "*"
+          - Sid: CreateLogGroup
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+            Resource: "*"
+
+  AccountService:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/accounts/
+      Handler: app.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Policies:
+        - !Ref AccountsDynamoDBAccess

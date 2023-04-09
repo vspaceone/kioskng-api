@@ -1,12 +1,19 @@
-const AWS = require('aws-sdk');
-const crypto = require('crypto')
+'use strict';
+
+const { 
+    DynamoDBClient, 
+    GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand,
+    ConditionalCheckFailedException } = require("@aws-sdk/client-dynamodb");
+const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
+const crypto = require('crypto');
 
 class DynamoRestfulHandler {
 
-    constructor(tableName) {
-        this.docClient = new AWS.DynamoDB.DocumentClient();
+    constructor(region, tableName, payloadValidator) {
+        this.ddClient = new DynamoDBClient({region: region})
         this.defaultPageSize = 10;
         this.tableName = tableName;
+        this.payloadValidator = payloadValidator;
     }
 
     async handleApiEvent(event){
@@ -29,30 +36,78 @@ class DynamoRestfulHandler {
     // ##################
 
     async handleDelete(event){
-        // TODO This should probably trigger more actions. Alternatively we could force previous deletion of all related elements?
-        
-        return { statusCode: 404 }
+        if (!event || !event.pathParameters || !event.pathParameters.id){
+            return { statusCode: 404 }
+        }
+
+        const command = new DeleteItemCommand({TableName: this.tableName, Key: marshall({id: event.pathParameters.id})});
+        let response;
+
+        try {
+            response = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        return { statusCode: 201 }
     }
 
     // ################
     // ##### POST #####
     // ################
 
-    // not required for now?
     async handlePost(event){
+        if (!event || !event.pathParameters || !event.pathParameters.id){
+            return { statusCode: 400 }
+        }
+
+        const id = event.pathParameters.id;
+
         // TODO only do patch? Do a get and then a put after modification?
-        /*const item = JSON.parse(event.body)
+        const item = JSON.parse(event.body)
+        const validate = this.payloadValidator.generatePutAccountValidator();
 
-        if (event && event.pathParameters && event.pathParameters.id){
-            let response = await this.docClient.({
-                TableName: this.tableName,
-                Item: item
-            }).promise()
-    
-        }*/
+        const valid = validate(item);
 
+        if (!valid) {
+            return {
+                statusCode: 422,
+                body: JSON.stringify(validate.errors)
+            }
+        }
 
-        return { statusCode: 501 }
+        item.id = id;
+
+        const command = new PutItemCommand({
+            TableName: this.tableName,
+            Item: marshall(item),
+            Expected: {
+                id: {
+                    //Exists: true,
+                    ComparisonOperator: "NOT_NULL"
+                }
+            }
+        })
+        let response;
+        
+        try {
+            response = await this.ddClient.send(command);
+        } catch (e) {
+
+            if (e instanceof ConditionalCheckFailedException){
+                return { statusCode: 404 }
+            }
+
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        return { statusCode: 201 }
     }
 
     // ###############
@@ -61,17 +116,37 @@ class DynamoRestfulHandler {
 
     async handlePut(event){
         const item = JSON.parse(event.body)
+        const validate = this.payloadValidator.generatePutAccountValidator();
+
+        const valid = validate(item);
+
+        if (!valid) {
+            return {
+                statusCode: 422,
+                body: JSON.stringify(validate.errors)
+            }
+        }
 
         item.id = crypto.randomUUID();
         
-        let response = await this.docClient.put({
+        const command = new PutItemCommand({
             TableName: this.tableName,
-            Item: item
-        }).promise()
+            Item: marshall(item)
+        });
+
+        let response;
+        try {
+            response = await this.ddClient.send(command)
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
 
         return {
-            statusCode: 201,
-            body: response
+            statusCode: 200,
+            body: item
         }
     }
 
@@ -88,20 +163,48 @@ class DynamoRestfulHandler {
     }
 
     async getItemByID(id){
-        let item = await this.docClient.get({TableName: this.tableName, Key: { id: id }}).promise()
+        const command = new GetItemCommand({TableName: this.tableName, Key: marshall({ id: id })})
+        let item;
+        
+        try {
+            item = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        if (!item.Item){
+            return {
+                statusCode: 404
+            };
+        }
 
         return {
             statusCode: 200,
-            body: JSON.stringify(item.Item)
+            body: JSON.stringify(unmarshall(item.Item))
         };
     }
 
     async getItems(){
-        let item = await this.docClient.scan({TableName: this.tableName}).promise()
+        const command = new ScanCommand({TableName: this.tableName});
+        let item;
+
+        try {
+            item = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        const unmarshalledItems = item.Items.map((i) => unmarshall(i));
         
         const response = {
             statusCode: 200,
-            body: JSON.stringify(item.Items)
+            body: JSON.stringify(unmarshalledItems)
         };
         return response;
     }
