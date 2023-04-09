@@ -1,4 +1,0 @@
-{
-  "httpMethod": "PUT",
-  "body": "{\"ean\":\"5903175657190\",\"sell_price\":1799,\"images\":[\"https://printbay.eu/media/image/product/1523/lg/spectrum-pla-bahama-yellow.png\"],\"buy_price\":2299,\"description\":\"Spectrum Premium PLA - das Filament, wenn deine Absicht ist, ein breites Spektrum abdecken zu können.\",\"name\":\"Spectrum PLA Bahama Yellow\"}"
-}

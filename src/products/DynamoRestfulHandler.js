@@ -1,9 +1,13 @@
-const AWS = require('aws-sdk');
+const { 
+    DynamoDBClient, 
+    GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand,
+    ConditionalCheckFailedException } = require("@aws-sdk/client-dynamodb");
+const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
 class DynamoRestfulHandler {
 
     constructor(tableName, payloadValidator) {
-        this.docClient = new AWS.DynamoDB.DocumentClient();
+        this.ddClient = new DynamoDBClient({region: "eu-north-1"})
         this.defaultPageSize = 10;
         this.tableName = tableName;
         this.payloadValidator = payloadValidator;
@@ -29,22 +33,26 @@ class DynamoRestfulHandler {
     // ##################
 
     async handleDelete(event){
-        if (event && event.queryStringParameters && event.queryStringParameters.ean){
-            try {
-                const response = await this.docClient.delete({TableName: this.tableName, Key: {ean: event.queryStringParameters.ean}}).promise()
-                return {
-                    statusCode: 201,
-                    body: response
-                }
-            } catch (err) {
-                return {
-                    statusCode: 500,
-                    body: response
-                }
-            }   
+        if (!event || !event.queryStringParameters || !event.queryStringParameters.ean){
+            return { statusCode: 404 }
         }
+
+        const command = new DeleteItemCommand({TableName: this.tableName, Key: marshall({ean: event.queryStringParameters.ean})});
+        let response;
         
-        return { statusCode: 404 }
+        try {
+            response = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        return {
+            statusCode: 201,
+            body: response
+        }
     }
 
     // ################
@@ -73,14 +81,23 @@ class DynamoRestfulHandler {
             }
         }
 
-        let response = await this.docClient.put({
+        const command = new PutItemCommand({
             TableName: this.tableName,
-            Item: item
-        }).promise()
+            Item: marshall(item)
+        })
+
+        let response;
+        try {
+            response = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
 
         return {
-            statusCode: 201,
-            body: response
+            statusCode: 201
         }
     }
 
@@ -97,20 +114,48 @@ class DynamoRestfulHandler {
     }
 
     async getItemByEan(ean){
-        let item = await this.docClient.get({TableName: this.tableName, Key: { ean: ean }}).promise()
+        const command = new GetItemCommand({TableName: this.tableName, Key: marshall({ ean: ean })});
+        let item;
+        
+        try {
+            item = await this.ddClient.send(command);
+        } catch (e){
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        if (!item.Item){
+            return {
+                statusCode: 404
+            };
+        }
 
         return {
             statusCode: 200,
-            body: JSON.stringify(item.Item)
+            body: JSON.stringify(unmarshall(item.Item))
         };
     }
 
     async getItems(){
-        let item = await this.docClient.scan({TableName: this.tableName}).promise()
-        
+        const command = new ScanCommand({TableName: this.tableName})
+        let item;
+
+        try {
+            item = await this.ddClient.send(command);
+        } catch (e) {
+            console.error("Error while calling DynamoDB.", e);
+            return {
+                statusCode: 500
+            }
+        }
+
+        const unmarshalledItems = item.Items.map((i) => unmarshall(i));
+
         const response = {
             statusCode: 200,
-            body: JSON.stringify(item.Items)
+            body: JSON.stringify(unmarshalledItems)
         };
         return response;
     }
