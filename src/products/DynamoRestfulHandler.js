@@ -1,7 +1,6 @@
 const { 
     DynamoDBClient, 
-    GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand,
-    ConditionalCheckFailedException } = require("@aws-sdk/client-dynamodb");
+    GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand } = require("@aws-sdk/client-dynamodb");
 const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
 class DynamoRestfulHandler {
