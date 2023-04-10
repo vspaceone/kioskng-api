@@ -55,7 +55,7 @@ of a user account through through multiple different media ids.
   "account": "ACCOUNT_UUID",
   "media_type": "RFID_???_ID|QR_CODE_EXACT_MATCH|APP_NFC|APP_TOKEN...",
   "creation_timestamp": 012343544356,
-  "location": "APP|PoS",
+  "device_type": "APP|PoS",
   "device_name": "Android ABC|PoS in the Lab",
   "valid_till_timestamp": 012343544356,
 }
@@ -93,6 +93,8 @@ Example base data model:
 }
 ```
 
+Price will always be count in cent-units (or equivalent).
+
 ## Transactions 
 
 Transactions establish and change account balance.
@@ -109,6 +111,7 @@ If any differences are spotted, then an INCONSISTENCY_CORRECTION transaction wil
 |-:|-|-|
 |GET   | /transactions | Get all |
 |GET   | /transactions?account=&lt;ACCOUNT_ID&gt; | Get by Username |
+|GET   | /transactions?account=&lt;ACCOUNT_ID&gt;&latest=true | Gets transaction for account id with highest timestamp (=last transaction; includes "current" account balance) |
 |PUT   | /transactions | Create (Override prohibited) |
 |DELETE| /transactions/&lt;id&gt; | Deletion prohibited, this might just create a canellation transaction |
 
@@ -122,7 +125,7 @@ If any differences are spotted, then an INCONSISTENCY_CORRECTION transaction wil
   "transaction_result": 10,
   "action": "BUY_PRODUCT|WITHDRAW|DEPOSIT|CANCEL|INCONSISTENCY_CORRECTION",
   "authentication": "USERNAME_PASSWORD|MEDIA_PIN|MEDIA_ONLY,
-  "location": "APP|PoS",
+  "device_type": "APP|PoS",
   "device_name": "Android ABC|PoS in the Lab"
   "product":{
     // 1:1 Product Object
