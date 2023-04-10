@@ -47,8 +47,8 @@ Resources:
   ProductService:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/products/
-      Handler: app.handler
+      CodeUri: src
+      Handler: products/app.handler
       Runtime: nodejs18.x
       Architectures:
         - x86_64
@@ -93,10 +93,102 @@ Resources:
   AccountService:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/accounts/
-      Handler: app.handler
+      CodeUri: src
+      Handler: accounts/app.handler
       Runtime: nodejs18.x
       Architectures:
         - x86_64
       Policies:
         - !Ref AccountsDynamoDBAccess
+
+  MediaMappingsDynamoDBAccess:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: ProductDynamoDBAccess
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ReadWriteTable
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+            Resource: arn:aws:dynamodb:*:*:table/media-mappings
+          - Sid: GetStreamRecords
+            Effect: Allow
+            Action:
+              - dynamodb:GetRecords
+            Resource: arn:aws:dynamodb:*:*:table/media-mappings/stream/*
+          - Sid: WriteLogStreamsAndGroups
+            Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: "*"
+          - Sid: CreateLogGroup
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+            Resource: "*"
+
+  MediaMappingService:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src
+      Handler: media-mappings/app.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Policies:
+        - !Ref MediaMappingsDynamoDBAccess
+  
+  TransactionsDynamoDBAccess:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: ProductDynamoDBAccess
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ReadWriteTable
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+            Resource: arn:aws:dynamodb:*:*:table/transactions
+          - Sid: GetStreamRecords
+            Effect: Allow
+            Action:
+              - dynamodb:GetRecords
+            Resource: arn:aws:dynamodb:*:*:table/transactions/stream/*
+          - Sid: WriteLogStreamsAndGroups
+            Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: "*"
+          - Sid: CreateLogGroup
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+            Resource: "*"
+
+  TransactionService:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src
+      Handler: transactions/app.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Policies:
+        - !Ref TransactionsDynamoDBAccess
