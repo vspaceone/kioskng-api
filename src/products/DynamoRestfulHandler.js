@@ -5,6 +5,8 @@ const {
     GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand } = require("@aws-sdk/client-dynamodb");
 const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
+const {DatabaseOperationException} = require('../utils/exceptions.js')
+
 class DynamoRestfulHandler {
 
     constructor(region, tableName, payloadValidator) {
@@ -106,11 +108,35 @@ class DynamoRestfulHandler {
     // ###############
 
     async handleGet(event){
-        if (event && event.queryStringParameters && event.queryStringParameters.ean){
-            return await this.getItemByEan(event.queryStringParameters.ean)
+        try {
+            let data;
+            if (event && event.queryStringParameters && event.queryStringParameters.ean){
+                data = await this.getItemByEan(event.queryStringParameters.ean)
+            }
+            data = await this.getItems();
+
+            if (data === null){
+                return {
+                    statusCode: 404
+                }
+            }
+
+            return {
+                statusCode: 200,
+                body: JSON.stringify(data)
+            }
+        } catch (e) {
+            if (e instanceof DatabaseOperationException){
+                return {
+                    statusCode: 500,
+                    body: e.message
+                }
+            }
+            return {
+                statusCode: 500,
+                body: "Unhandled error"
+            }
         }
-        
-        return await this.getItems();
     }
 
     async getItemByEan(ean){
@@ -120,22 +146,14 @@ class DynamoRestfulHandler {
         try {
             item = await this.ddClient.send(command);
         } catch (e){
-            console.error("Error while calling DynamoDB.", e);
-            return {
-                statusCode: 500
-            }
+            throw new DatabaseOperationException("Error while calling DynamoDB.", e);
         }
 
         if (!item.Item){
-            return {
-                statusCode: 404
-            };
+            return null;
         }
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify(unmarshall(item.Item))
-        };
+        return unmarshall(item.Item);
     }
 
     async getItems(){
@@ -145,19 +163,12 @@ class DynamoRestfulHandler {
         try {
             item = await this.ddClient.send(command);
         } catch (e) {
-            console.error("Error while calling DynamoDB.", e);
-            return {
-                statusCode: 500
-            }
+            throw new DatabaseOperationException("Error while calling DynamoDB.", e);
         }
 
         const unmarshalledItems = item.Items.map((i) => unmarshall(i));
 
-        const response = {
-            statusCode: 200,
-            body: JSON.stringify(unmarshalledItems)
-        };
-        return response;
+        return unmarshalledItems;
     }
 
 }

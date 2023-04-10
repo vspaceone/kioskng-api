@@ -6,9 +6,7 @@ const {
     ConditionalCheckFailedException } = require("@aws-sdk/client-dynamodb");
 const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
-const AWS = require('aws-sdk');
-
-const {DatabaseOperationException, PayloadValidationException, DataConflictException} = require('../utils/exceptions.js')
+const {DatabaseOperationException, DataConflictException} = require('../utils/exceptions.js')
 
 const { time } = require("console");
 const crypto = require('crypto');
