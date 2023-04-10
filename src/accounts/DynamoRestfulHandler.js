@@ -84,12 +84,7 @@ class DynamoRestfulHandler {
         const command = new PutItemCommand({
             TableName: this.tableName,
             Item: marshall(item),
-            Expected: {
-                id: {
-                    //Exists: true,
-                    ComparisonOperator: "NOT_NULL"
-                }
-            }
+            ConditionExpression: "attribute_exists(id)"
         })
         let response;
         
@@ -131,7 +126,8 @@ class DynamoRestfulHandler {
         
         const command = new PutItemCommand({
             TableName: this.tableName,
-            Item: marshall(item)
+            Item: marshall(item),
+            ConditionExpression: "attribute_not_exists(id)"
         });
 
         let response;

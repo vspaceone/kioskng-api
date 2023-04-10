@@ -1,6 +1,5 @@
 'use strict';
 
-const AWS = require('aws-sdk');
 const { 
     DynamoDBClient, 
     GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand, QueryCommand,
@@ -11,7 +10,6 @@ const crypto = require('crypto')
 class DynamoRestfulHandler {
 
     constructor(region, tableName, payloadValidator) {
-        this.docClient = new AWS.DynamoDB.DocumentClient();
         this.ddClient = new DynamoDBClient({region: region});
         this.defaultPageSize = 10;
         this.tableName = tableName;
