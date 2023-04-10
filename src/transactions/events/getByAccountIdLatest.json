@@ -1,0 +1,7 @@
+{
+  "httpMethod": "GET",
+  "queryStringParameters": {
+    "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+    "latest": "true"
+  }
+}
