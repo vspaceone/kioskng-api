@@ -1,0 +1,23 @@
+{
+  "name": "kioskng-api-integration-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha "
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.309.0",
+    "@aws-sdk/client-lambda": "^3.310.0",
+    "@aws-sdk/util-utf8-node": "^3.259.0",
+    "ajv": "^8.12.0",
+    "axios": ">=0.21.1",
+    "sync-request": "^6.1.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "mocha": "^10.1.0"
+  },
+  "author": "",
+  "license": "MIT"
+}
