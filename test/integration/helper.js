@@ -3,6 +3,8 @@ const request = require('sync-request');
 const { assert } = require('chai')
 const { fromUtf8, toUtf8 } = require("@aws-sdk/util-utf8-node");
 
+const NIL_UUID =  "00000000-0000-0000-0000-000000000000";
+
 function insaneSleepSeconds(seconds){
     var waitTill = new Date(new Date().getTime() + seconds * 1000);
     while(waitTill > new Date()){}
@@ -90,6 +92,7 @@ function isUuid(uuid, isNullable = false) {
         : /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
 }
 
+exports.NIL_UUID = NIL_UUID;
 exports.isUuid = isUuid;
 exports.httpPayload = httpPayload;
 exports.testAndExtractLambdaResponse = testAndExtractLambdaResponse;

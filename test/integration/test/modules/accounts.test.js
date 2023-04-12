@@ -4,7 +4,7 @@ const {
     InvokeCommand
 } = require('@aws-sdk/client-lambda')
 const { fromUtf8, toUtf8 } = require("@aws-sdk/util-utf8-node");
-const { testAndExtractLambdaResponse, httpPayload, isUuid } = require("../../helper");
+const { testAndExtractLambdaResponse, httpPayload, isUuid, NIL_UUID } = require("../../helper");
 const { assert } = require('chai')
 
 describe("Account Service", function() {
@@ -67,7 +67,7 @@ describe("Account Service", function() {
                 Payload: httpPayload({
                     method: "GET",
                     pathParameters: {
-                        "id": "00000000-0000-0000-0000-000000000000"
+                        "id": NIL_UUID
                     }
                 })
             });
@@ -88,7 +88,7 @@ describe("Account Service", function() {
                 Payload: httpPayload({
                     method: "PUT",
                     body: {
-                        "id": "00000000-0000-0000-0000-000000000000",
+                        "id": NIL_UUID,
                         "fullname": "Hans Vader",
                         "street": "Galactic Road 000",
                         "post_code": "00000",
@@ -171,7 +171,7 @@ describe("Account Service", function() {
                 Payload: httpPayload({
                     method: "POST",
                     pathParameters: {
-                        id: "00000000-0000-0000-0000-000000000000"
+                        id: NIL_UUID
                     },
                     body: {
                         "fullname": "Hans Bader",
@@ -250,7 +250,7 @@ describe("Account Service", function() {
                 Payload: httpPayload({
                     method: "DELETE",
                     pathParameters: {
-                        id: "00000000-0000-0000-0000-000000000000"
+                        id: NIL_UUID
                     }
                 })
             });
