@@ -36,11 +36,11 @@ class DynamoRestfulHandler {
     // ##################
 
     async handleDelete(event){
-        if (!event || !event.queryStringParameters || !event.queryStringParameters.ean){
+        if (!event || !event.pathParameters || !event.pathParameters.ean){
             return { statusCode: 404 }
         }
 
-        const command = new DeleteItemCommand({TableName: this.tableName, Key: marshall({ean: event.queryStringParameters.ean})});
+        const command = new DeleteItemCommand({TableName: this.tableName, Key: marshall({ean: event.pathParameters.ean})});
         let response;
         
         try {
@@ -53,7 +53,7 @@ class DynamoRestfulHandler {
         }
 
         return {
-            statusCode: 201
+            statusCode: 204
         }
     }
 
@@ -99,7 +99,8 @@ class DynamoRestfulHandler {
         }
 
         return {
-            statusCode: 201
+            statusCode: 200,
+            body: JSON.stringify(item)
         }
     }
 
@@ -110,10 +111,11 @@ class DynamoRestfulHandler {
     async handleGet(event){
         try {
             let data;
-            if (event && event.queryStringParameters && event.queryStringParameters.ean){
-                data = await this.getItemByEan(event.queryStringParameters.ean)
+            if (event && event.pathParameters && event.pathParameters.ean){
+                data = await this.getItemByEan(event.pathParameters.ean)
+            } else {
+                data = await this.getItems();
             }
-            data = await this.getItems();
 
             if (data === null){
                 return {

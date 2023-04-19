@@ -55,7 +55,7 @@ class DynamoRestfulHandler {
             }
         }
 
-        return { statusCode: 201 }
+        return { statusCode: 204 }
     }
 
     // ################
@@ -105,7 +105,7 @@ class DynamoRestfulHandler {
             }
         }
 
-        return { statusCode: 201 }
+        return { statusCode: 200, body: item }
     }
 
     // ###############
@@ -158,8 +158,9 @@ class DynamoRestfulHandler {
             let data;
             if (event && event.pathParameters && event.pathParameters.id){
                 data = await this.getItemByID(event.pathParameters.id)
+            } else {
+                data = await this.getItems();
             }
-            data = await this.getItems();
 
             if (data === null){
                 return {

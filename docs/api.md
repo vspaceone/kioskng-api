@@ -19,7 +19,6 @@ A pin is added by the user for additional factor to media presenation.
 |GET   | /accounts/&lt;id&gt; | Get by ID |
 |PUT   | /accounts | Create (Probably will be automated action through registration) |
 |POST  | /accounts/&lt;id&gt; | Update any values |
-|PATCH | /accounts/&lt;id&gt; | Update any values with JSONP |
 |DELETE| /accounts/&lt;id&gt; | Deletion of own account (this should cleanup more than just within the accounts table) |
 
 ```
@@ -75,9 +74,9 @@ Products represent whatever can be acquired through a transaction.
 |Verb|Resource|Description|
 |-:|-|-|
 |GET   | /products | Get all |
-|GET   | /products?ean=&lt;ean&gt; | Get by EAN |
+|GET   | /products/&lt;ean&gt; | Get by EAN |
 |PUT   | /products | Create/Override |
-|DELETE| /products?ean=&lt;ean&gt; | Delete by EAN |
+|DELETE| /products/&lt;ean&gt; | Delete by EAN |
 
 Example base data model:
 
@@ -113,7 +112,7 @@ If any differences are spotted, then an INCONSISTENCY_CORRECTION transaction wil
 |GET   | /transactions?account=&lt;ACCOUNT_ID&gt; | Get by Username |
 |GET   | /transactions?account=&lt;ACCOUNT_ID&gt;&latest=true | Gets transaction for account id with highest timestamp (=last transaction; includes "current" account balance) |
 |PUT   | /transactions | Create (Override prohibited) |
-|DELETE| /transactions/&lt;id&gt; | Deletion prohibited, this might just create a canellation transaction |
+|DELETE| /transactions/&lt;id&gt; | Deletion prohibited, this might just create a cancellation transaction |
 
 
 ```

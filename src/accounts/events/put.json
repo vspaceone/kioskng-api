@@ -1,4 +1,4 @@
 {
   "httpMethod": "PUT",
-  "body": "{\"fullname\":\"Klaus Klabustermann\",\"street\":\"Klaus-Kinski-Allee 123\",\"post_code\":\"78048\",\"city\":\"Villingen-Schwenningen\",\"pin\":\"0000\"}"
+  "body": "{\"id\":\"00000000-0000-0000-0000-000000000000\",\"fullname\":\"Klaus Klabustermann\",\"street\":\"Klaus-Kinski-Allee 123\",\"post_code\":\"78048\",\"city\":\"Villingen-Schwenningen\",\"pin\":\"0000\"}"
 }

@@ -42,7 +42,8 @@ class PayloadValidators {
                     type: "integer"
                 }
             },
-            required: ["media_identification", "account_id", "media_type"]
+            required: ["media_identification", "account_id", "media_type"],
+            additionalProperties: false
         })
     }
 }

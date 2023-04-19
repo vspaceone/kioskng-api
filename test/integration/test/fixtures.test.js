@@ -2,10 +2,14 @@ const { startLambda, stopLambda } = require("../helper");
 
 before(function() {
     this.timeout(50000);
-    //startLambda();
+    if (process.env.HANDLE_LOCAL_LAMBDA_RUN){
+        startLambda();
+    }
 })
 
 after(async function() {
     this.timeout(10000);
-    //await stopLambda();
+    if (process.env.HANDLE_LOCAL_LAMBDA_RUN){
+        await stopLambda();
+    }
 })

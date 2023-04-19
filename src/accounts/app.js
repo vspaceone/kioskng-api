@@ -42,7 +42,8 @@ class PayloadValidators {
                     pattern: "^[0-9]{4}$"
                 }
             },
-            required: ["fullname", "street", "post_code", "city"]
+            required: ["fullname", "street", "post_code", "city"],
+            additionalProperties: false
         })
     }
 }

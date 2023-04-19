@@ -2,8 +2,18 @@ const { exec } = require('child_process');
 const request = require('sync-request');
 const { assert } = require('chai')
 const { fromUtf8, toUtf8 } = require("@aws-sdk/util-utf8-node");
+const { 
+    LambdaClient,
+    InvokeCommand
+} = require('@aws-sdk/client-lambda')
 
 const NIL_UUID =  "00000000-0000-0000-0000-000000000000";
+
+let lambdaClient = new LambdaClient({
+    endpoint: 'http://127.0.0.1:3001',
+    region: 'eu-north-1',
+    tls: false
+})
 
 function insaneSleepSeconds(seconds){
     var waitTill = new Date(new Date().getTime() + seconds * 1000);
@@ -47,7 +57,7 @@ function testAndExtractLambdaResponse(response){
 
     const payload = JSON.parse(toUtf8(response.Payload));
 
-    let data = {payload: payload};
+    let data = {payload: payload, respose: response};
 
     if (payload.statusCode){
         data.statusCode = payload.statusCode
@@ -92,7 +102,18 @@ function isUuid(uuid, isNullable = false) {
         : /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
 }
 
+async function invokeLambdaForResponse(funcName, payload){
+    const command = new InvokeCommand({
+        FunctionName: funcName,
+        InvocationType: "RequestResponse",
+        Payload: payload
+    });
+    const response = await lambdaClient.send(command);
+    return testAndExtractLambdaResponse(response);
+}
+
 exports.NIL_UUID = NIL_UUID;
+exports.invokeLambdaForResponse = invokeLambdaForResponse;
 exports.isUuid = isUuid;
 exports.httpPayload = httpPayload;
 exports.testAndExtractLambdaResponse = testAndExtractLambdaResponse;

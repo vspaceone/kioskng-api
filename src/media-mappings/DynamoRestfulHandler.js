@@ -55,7 +55,7 @@ class DynamoRestfulHandler {
             }
         }
 
-        return { statusCode: 201 }
+        return { statusCode: 204 }
     }
 
     // ################
@@ -87,7 +87,7 @@ class DynamoRestfulHandler {
         if (await this.conflictingMappingExists(item)){
             return {
                 statusCode: 422,
-                body: {"error": "Exact media-id with that media type is already mapped."}
+                body: JSON.stringify({"error": "Exact media-id with that media type is already mapped."})
             }
         }
 
@@ -118,7 +118,7 @@ class DynamoRestfulHandler {
     async conflictingMappingExists(item){
         // TODO this is inefficient, but not sure if there's any way to get this made within a condition expression
         const response = await this.getItemByMediaTypeAndIdentification(item.media_type, item.media_identification);
-        if (response && response.statusCode === 200){
+        if (response !== null){
             return true;
         }
         return false;
@@ -136,9 +136,9 @@ class DynamoRestfulHandler {
                 data = await this.getItemByID(event.pathParameters.id)
             } else if (event && event.queryStringParameters && event.queryStringParameters.media_identification && event.queryStringParameters.media_type) {
                 data = await this.getItemByMediaTypeAndIdentification(event.queryStringParameters.media_type,  event.queryStringParameters.media_identification)
+            } else {            
+                data = await this.getItems();
             }
-            
-            data = await this.getItems();
 
             if (data === null){
                 return {
