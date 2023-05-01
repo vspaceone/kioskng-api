@@ -9,7 +9,7 @@ Globals:
     Timeout: 3
     Environment:
       Variables:
-        AWS_REGION: !Ref AWS::Region
+        RUNTIME_REGION: !Ref AWS::Region
         DYNAMODB_TABLE_ACCOUNTS: accounts
         DYNAMODB_TABLE_MEDIA_MAPPINGS: media-mappings
         DYNAMODB_TABLE_PRODUCTS: products
@@ -33,7 +33,10 @@ Resources:
               - dynamodb:BatchWriteItem
               - dynamodb:PutItem
               - dynamodb:UpdateItem
-            Resource: arn:aws:dynamodb:*:*:table/products
+              - dynamodb:DeleteItem
+            Resource: 
+              - arn:aws:dynamodb:*:*:table/products
+              - arn:aws:dynamodb:*:*:table/products/index/*
           - Sid: GetStreamRecords
             Effect: Allow
             Action:
@@ -54,6 +57,7 @@ Resources:
   ProductService:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: ProductService
       CodeUri: src
       Handler: products/app.handler
       Runtime: nodejs18.x
@@ -79,7 +83,10 @@ Resources:
               - dynamodb:BatchWriteItem
               - dynamodb:PutItem
               - dynamodb:UpdateItem
-            Resource: arn:aws:dynamodb:*:*:table/accounts
+              - dynamodb:DeleteItem
+            Resource: 
+              - arn:aws:dynamodb:*:*:table/accounts
+              - arn:aws:dynamodb:*:*:table/accounts/index/*
           - Sid: GetStreamRecords
             Effect: Allow
             Action:
@@ -100,6 +107,7 @@ Resources:
   AccountService:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: AccountService
       CodeUri: src
       Handler: accounts/app.handler
       Runtime: nodejs18.x
@@ -116,7 +124,7 @@ Resources:
         Version: '2012-10-17'
         Statement:
           # Read own table
-          - Sid: ReadWriteTable
+          - Sid: ReadWriteOwnTable
             Effect: Allow
             Action:
               - dynamodb:BatchGetItem
@@ -126,22 +134,27 @@ Resources:
               - dynamodb:BatchWriteItem
               - dynamodb:PutItem
               - dynamodb:UpdateItem
-            Resource: arn:aws:dynamodb:*:*:table/media-mappings
-          - Sid: GetStreamRecords
+              - dynamodb:DeleteItem
+            Resource: 
+              - arn:aws:dynamodb:*:*:table/media-mappings
+              - arn:aws:dynamodb:*:*:table/media-mappings/index/*
+          - Sid: GetStreamRecordsOwn
             Effect: Allow
             Action:
               - dynamodb:GetRecords
             Resource: arn:aws:dynamodb:*:*:table/media-mappings/stream/*
           # Read accounts table
-          - Sid: ReadWriteTable
+          - Sid: ReadAccountsTable
             Effect: Allow
             Action:
               - dynamodb:BatchGetItem
               - dynamodb:GetItem
               - dynamodb:Query
               - dynamodb:Scan
-            Resource: arn:aws:dynamodb:*:*:table/accounts
-          - Sid: GetStreamRecords
+            Resource: 
+              - arn:aws:dynamodb:*:*:table/accounts
+              - arn:aws:dynamodb:*:*:table/accounts/index/*
+          - Sid: GetStreamRecordsAccounts
             Effect: Allow
             Action:
               - dynamodb:GetRecords
@@ -162,6 +175,7 @@ Resources:
   MediaMappingService:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: MediaMappingService
       CodeUri: src
       Handler: media-mappings/app.handler
       Runtime: nodejs18.x
@@ -178,7 +192,7 @@ Resources:
         Version: '2012-10-17'
         Statement:
           # Read/Write own table
-          - Sid: ReadWriteTable
+          - Sid: ReadWriteOwnTable
             Effect: Allow
             Action:
               - dynamodb:BatchGetItem
@@ -188,36 +202,43 @@ Resources:
               - dynamodb:BatchWriteItem
               - dynamodb:PutItem
               - dynamodb:UpdateItem
-            Resource: arn:aws:dynamodb:*:*:table/transactions
-          - Sid: GetStreamRecords
+              - dynamodb:DeleteItem
+            Resource: 
+              - arn:aws:dynamodb:*:*:table/transactions
+              - arn:aws:dynamodb:*:*:table/transactions/index/*
+          - Sid: GetStreamRecordsOwn
             Effect: Allow
             Action:
               - dynamodb:GetRecords
             Resource: arn:aws:dynamodb:*:*:table/transactions/stream/*
           # Read accounts table
-          - Sid: ReadWriteTable
+          - Sid: ReadAccountsTable
             Effect: Allow
             Action:
               - dynamodb:BatchGetItem
               - dynamodb:GetItem
               - dynamodb:Query
               - dynamodb:Scan
-            Resource: arn:aws:dynamodb:*:*:table/accounts
-          - Sid: GetStreamRecords
+            Resource: 
+              - arn:aws:dynamodb:*:*:table/accounts
+              - arn:aws:dynamodb:*:*:table/accounts/index/*
+          - Sid: GetStreamRecordsAccounts
             Effect: Allow
             Action:
               - dynamodb:GetRecords
             Resource: arn:aws:dynamodb:*:*:table/accounts/stream/*
           # Read products table
-          - Sid: ReadWriteTable
+          - Sid: ReadProductsTable
             Effect: Allow
             Action:
               - dynamodb:BatchGetItem
               - dynamodb:GetItem
               - dynamodb:Query
               - dynamodb:Scan
-            Resource: arn:aws:dynamodb:*:*:table/products
-          - Sid: GetStreamRecords
+            Resource: 
+              - arn:aws:dynamodb:*:*:table/products
+              - arn:aws:dynamodb:*:*:table/products/index/*
+          - Sid: GetStreamRecordsProducts
             Effect: Allow
             Action:
               - dynamodb:GetRecords
@@ -238,6 +259,7 @@ Resources:
   TransactionService:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: TransactionService
       CodeUri: src
       Handler: transactions/app.handler
       Runtime: nodejs18.x

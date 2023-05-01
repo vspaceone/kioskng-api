@@ -3,7 +3,7 @@
 const { DynamoRestfulHandler } = require('./DynamoRestfulHandler.js');
 const Ajv = require('ajv');
 
-const region = process.env.AWS_REGION;
+const region = process.env.RUNTIME_REGION;
 const tableName = process.env.DYNAMODB_TABLE_MEDIA_MAPPINGS;
 
 exports.handler = async (event, context) => {

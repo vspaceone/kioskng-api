@@ -178,7 +178,7 @@ describe("Account Service", function() {
 
     describe('DELETE', function(){
         it('is accepted and returns no content', async function() {
-            const {statusCode} = await invokeLambdaForResponse(
+            const {payload, statusCode, body} = await invokeLambdaForResponse(
                 "AccountService", 
                 httpPayload({
                     method: "DELETE",
