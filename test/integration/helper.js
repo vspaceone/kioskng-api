@@ -22,7 +22,9 @@ function insaneSleepSeconds(seconds){
 
 function startLambda() {
     exec(`sam local start-lambda &> /dev/null & disown`);
+}
 
+function waitForLambda(){
     let repeat = true;
     while (repeat) {
         console.log("Waiting for lambda server to be available...")
@@ -52,7 +54,7 @@ async function stopLambda() {
 }
 
 function testAndExtractLambdaResponse(response){
-    assert(response['$metadata'].httpStatusCode === 200, "Response metadata is 200");
+    assert(response.StatusCode === 200, "Response metadata is 200");
     assert((typeof response.Payload) !== undefined, "Payload is provided");
 
     const payload = JSON.parse(toUtf8(response.Payload));
@@ -113,6 +115,7 @@ async function invokeLambdaForResponse(funcName, payload){
 }
 
 exports.NIL_UUID = NIL_UUID;
+exports.waitForLambda = waitForLambda;
 exports.invokeLambdaForResponse = invokeLambdaForResponse;
 exports.isUuid = isUuid;
 exports.httpPayload = httpPayload;

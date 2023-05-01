@@ -36,9 +36,9 @@ class PayloadValidators {
                     type: "integer"
                 },*/
                 action: {
-                    enum: ["BUY_PRODUCT","WITHDRAW","DEPOSIT","CANCEL","INCONSISTENCY_CORRECTION"]
+                    enum: ["BUY_PRODUCT","WITHDRAW","DEPOSIT"] // "CANCEL","INCONSISTENCY_CORRECTION" are possible values as well but can not be put through API
                 },
-                authentication: {
+                /*authentication: {
                     enum: ["USERNAME_PASSWORD","MEDIA_PIN","MEDIA_ONLY"]
                 },
                 device_type: {
@@ -46,15 +46,13 @@ class PayloadValidators {
                 },
                 device_name: {
                     type: "string"
-                },
+                },*/
                 product: {
                     type: "object"
                 }
             },
-            required: ["account_id", "transaction_amount", "action", "authentication", "device_type", "device_name"]
+            required: ["account_id", "action"],
+            additionalProperties: false
         })
     }
-
-
-
 }

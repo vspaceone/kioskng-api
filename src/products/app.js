@@ -48,3 +48,7 @@ class PayloadValidators {
         })
     }
 }
+
+exports.PayloadValidators = PayloadValidators;
+exports.tableName = tableName;
+exports.region = region;

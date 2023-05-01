@@ -7,6 +7,12 @@ const {
 const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
 const {DatabaseOperationException, DataConflictException} = require('../utils/exceptions.js')
+const ProductDynamoRestfulHandler = require('../products/DynamoRestfulHandler.js').DynamoRestfulHandler;
+
+const productModule = require('../products/app.js');
+const ProductPayloadValidators = productModule.PayloadValidators;
+const productRegion = productModule.region;
+const productTableName = productModule.tableName;
 
 const { time } = require("console");
 const crypto = require('crypto');
@@ -14,11 +20,12 @@ const crypto = require('crypto');
 class DynamoRestfulHandler {
 
     constructor(region, tableName, payloadValidator) {
-        this.docClient = new AWS.DynamoDB.DocumentClient();
         this.ddClient = new DynamoDBClient({region: region});
         this.defaultPageSize = 10;
         this.tableName = tableName;
         this.payloadValidator = payloadValidator;
+
+        this.productDynamoRestfulHandler = new ProductDynamoRestfulHandler(productRegion, productTableName, new ProductPayloadValidators())
     }
 
     async handleApiEvent(event){
@@ -27,8 +34,6 @@ class DynamoRestfulHandler {
                 return await this.handleGet(event);
             case "PUT":
                 return await this.handlePut(event);
-            case "POST":
-                return await this.handlePost(event);
             case "DELETE":
                 return await this.handleDelete(event);
             default:
@@ -47,15 +52,6 @@ class DynamoRestfulHandler {
 
         // TODO reuse this transaction but set action to CANCEL, negate the amount and recalculate the result
         
-        return { statusCode: 501 }
-    }
-
-    // ################
-    // ##### POST #####
-    // ################
-
-    // not required for now?
-    async handlePost(event){
         return { statusCode: 501 }
     }
 
@@ -118,8 +114,8 @@ class DynamoRestfulHandler {
         // TODO get "last" transaction for same account_id or assume to start off with 0 balance
         // TODO the last transaction must be queried "strongly consistent" to make sure it reflect the most recent value
         let assumedLastBalance = 0;
-        if (lastTransaction && lastTransaction.transaction_amount !== undefined){
-            assumedLastBalance = lastTransaction.transaction_amount
+        if (lastTransaction && lastTransaction.transaction_result !== undefined){
+            assumedLastBalance = lastTransaction.transaction_result
         }
 
         // TODO check plausibility of item.transaction_amount in comparison with item.action, if the latter is "BUY_PRODUCT" then we need to always retrieve price from products table
@@ -134,12 +130,22 @@ class DynamoRestfulHandler {
             }
         } 
         
-        if (transactionData.action === "BUY_PRODUCT" && transactionData.product !== undefined && transactionData.product.ean !== undefined){
-            // TODO we expect to at least get PRODUCT_EAN here and will always (!) override item.product to ensure consistency
-            // TODO additionally we will recalculate item.transaction_result and set item.transaction_amount to -price of the product
-        } else {
+        if (transactionData.action === "BUY_PRODUCT" && transactionData.product !== undefined && transactionData.product.ean !== undefined && transactionData.transaction_amount === undefined){
+            const selectedProduct = await this.productDynamoRestfulHandler.getItemByEan(transactionData.product.ean);
+
+            if (selectedProduct === null){
+                throw new DataConflictException("BUY_PRODUCT action was specified but transactionData.product.ean is not a known products ean", 404);
+            }
+
+            if (selectedProduct.ean !== transactionData.product.ean){
+                throw new DataConflictException("Internal error: ean mismatch", 500);
+            }
+            
+            transactionData.transaction_amount = -selectedProduct.price;
+            transactionData.product = selectedProduct;
+        } else if (transactionData.action === "BUY_PRODUCT") {
             // TODO If no products specified this operation should fail
-            throw new DataConflictException("BUY_PRODUCT action was specified but no valid value for product.ean was found", 406);
+            throw new DataConflictException("BUY_PRODUCT action was specified but no valid value for product.ean was found or transaction amount is set", 406);
         }
 
         transactionData.transaction_result = assumedLastBalance + transactionData.transaction_amount;       
@@ -168,10 +174,10 @@ class DynamoRestfulHandler {
             let data;
             if (event && event.pathParameters && event.pathParameters.id){
                 data = await this.getItemByID(event.pathParameters.id)
-            } else if (event && event.queryStringParameters && event.queryStringParameters.account_id && !event.queryStringParameters.latest){
-                data = await this.getItemByAccountID(event.queryStringParameters.account_id)
             } else if (event && event.queryStringParameters && event.queryStringParameters.account_id && event.queryStringParameters.latest === "true"){
                 data = await this.getMostRecentItemByAccountIDAndTimestamp(event.queryStringParameters.account_id)
+            } else if (event && event.queryStringParameters && event.queryStringParameters.account_id){
+                data = await this.getItemByAccountID(event.queryStringParameters.account_id)
             } else {
                 data = await this.getItems();
             }
