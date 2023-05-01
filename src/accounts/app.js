@@ -3,8 +3,8 @@
 const { DynamoRestfulHandler } = require('./DynamoRestfulHandler.js');
 const Ajv = require('ajv');
 
-const region = "eu-north-1";
-const tableName = "accounts";
+const region = process.env.AWS_REGION;
+const tableName = process.env.DYNAMODB_TABLE_ACCOUNTS;
 
 exports.handler = async (event, context) => {
     const restHandler = new DynamoRestfulHandler(region, tableName, new PayloadValidators());

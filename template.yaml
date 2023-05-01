@@ -7,6 +7,13 @@ Description: >
 Globals:
   Function:
     Timeout: 3
+    Environment:
+      Variables:
+        AWS_REGION: !Ref AWS::Region
+        DYNAMODB_TABLE_ACCOUNTS: accounts
+        DYNAMODB_TABLE_MEDIA_MAPPINGS: media-mappings
+        DYNAMODB_TABLE_PRODUCTS: products
+        DYNAMODB_TABLE_TRANSACTIONS: transactions
 
 Resources:
   ProductsDynamoDBAccess:
@@ -108,6 +115,7 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
+          # Read own table
           - Sid: ReadWriteTable
             Effect: Allow
             Action:
@@ -124,6 +132,21 @@ Resources:
             Action:
               - dynamodb:GetRecords
             Resource: arn:aws:dynamodb:*:*:table/media-mappings/stream/*
+          # Read accounts table
+          - Sid: ReadWriteTable
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource: arn:aws:dynamodb:*:*:table/accounts
+          - Sid: GetStreamRecords
+            Effect: Allow
+            Action:
+              - dynamodb:GetRecords
+            Resource: arn:aws:dynamodb:*:*:table/accounts/stream/*
+          # CloudWatch
           - Sid: WriteLogStreamsAndGroups
             Effect: Allow
             Action:
@@ -154,6 +177,7 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
+          # Read/Write own table
           - Sid: ReadWriteTable
             Effect: Allow
             Action:
@@ -170,6 +194,35 @@ Resources:
             Action:
               - dynamodb:GetRecords
             Resource: arn:aws:dynamodb:*:*:table/transactions/stream/*
+          # Read accounts table
+          - Sid: ReadWriteTable
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource: arn:aws:dynamodb:*:*:table/accounts
+          - Sid: GetStreamRecords
+            Effect: Allow
+            Action:
+              - dynamodb:GetRecords
+            Resource: arn:aws:dynamodb:*:*:table/accounts/stream/*
+          # Read products table
+          - Sid: ReadWriteTable
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource: arn:aws:dynamodb:*:*:table/products
+          - Sid: GetStreamRecords
+            Effect: Allow
+            Action:
+              - dynamodb:GetRecords
+            Resource: arn:aws:dynamodb:*:*:table/products/stream/*
+          # CloudWatch
           - Sid: WriteLogStreamsAndGroups
             Effect: Allow
             Action:
