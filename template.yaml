@@ -3,7 +3,16 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   kioskng-api
   Sample SAM Template for kioskng-api
-  
+
+Parameters:
+  Stage:
+    Type: String
+    Default: test
+    AllowedValues:
+      - test
+      - prod
+    Description: Whether you want to deploy on test or prod
+
 Globals:
   Function:
     Timeout: 3
@@ -57,7 +66,7 @@ Resources:
   ProductService:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: ProductService
+      FunctionName: !Join [ '-', ['ProductService', !Ref Stage]]
       CodeUri: src
       Handler: products/app.handler
       Runtime: nodejs18.x
@@ -107,7 +116,7 @@ Resources:
   AccountService:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: AccountService
+      FunctionName: !Join [ '-', ['AccountService', !Ref Stage]]
       CodeUri: src
       Handler: accounts/app.handler
       Runtime: nodejs18.x
@@ -175,7 +184,7 @@ Resources:
   MediaMappingService:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: MediaMappingService
+      FunctionName: !Join [ '-', ['MediaMappingService', !Ref Stage]]
       CodeUri: src
       Handler: media-mappings/app.handler
       Runtime: nodejs18.x
@@ -259,7 +268,7 @@ Resources:
   TransactionService:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: TransactionService
+      FunctionName: !Join [ '-', ['TransactionService', !Ref Stage]]
       CodeUri: src
       Handler: transactions/app.handler
       Runtime: nodejs18.x
