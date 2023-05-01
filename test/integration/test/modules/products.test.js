@@ -1,4 +1,3 @@
-// TODO From this: https://medium.com/assertqualityassurance/aws-lambda-integration-test-easier-than-you-might-think-a66a9d600916
 const { fromUtf8, toUtf8 } = require("@aws-sdk/util-utf8-node");
 const { invokeLambdaForResponse ,testAndExtractLambdaResponse, httpPayload, isUuid, NIL_UUID } = require("../../helper");
 const { expect } = require('chai')

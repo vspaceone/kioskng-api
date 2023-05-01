@@ -97,6 +97,23 @@ describe("Media Mappings Service", function() {
     });
 
     describe('PUT', function(){
+
+        let anyAccountId = NIL_UUID;
+
+        this.beforeAll(async function(){
+            const {statusCode, body} = await invokeLambdaForResponse(
+                "AccountService", 
+                httpPayload({
+                    method: "GET"
+                })
+            );
+            
+            expect(statusCode).to.equal(200);
+            expect(body).to.be.an('array');
+
+            anyAccountId = body[0].id;
+        });
+
         it('with id field is rejected (payload does not match schema)', async function() {
             const {payload, statusCode} = await invokeLambdaForResponse(
                 "MediaMappingService", 
@@ -105,10 +122,8 @@ describe("Media Mappings Service", function() {
                     body: {
                         "id": NIL_UUID,
                         "media_identification": "11234asdf34fqv",
-                        "account": NIL_UUID,
+                        "account_id": anyAccountId,
                         "media_type": "RFID_ID",
-                        "creation_timestamp": 012343544356,
-                        "location": "APP",
                         "device_name": "Android ABC",
                         "valid_till_timestamp": 012343544356
                     }
@@ -118,6 +133,24 @@ describe("Media Mappings Service", function() {
             expect(statusCode).to.equal(422);
         });
 
+        it('with non existing account id is rejected with 404', async function() {
+            const {payload, statusCode} = await invokeLambdaForResponse(
+                "MediaMappingService", 
+                httpPayload({
+                    method: "PUT",
+                    body: {
+                        "media_identification": "11234asdf34fqv",
+                        "account_id": NIL_UUID,
+                        "media_type": "RFID_ID",
+                        "device_name": "Android ABC",
+                        "valid_till_timestamp": 012343544356
+                    }
+                })
+            );
+            
+            expect(statusCode).to.equal(404);
+        });
+
         it('is accepted and returns full payload with id', async function() {
             const {payload, statusCode, body} = await invokeLambdaForResponse(
                 "MediaMappingService", 
@@ -125,7 +158,7 @@ describe("Media Mappings Service", function() {
                     method: "PUT",
                     body: {
                         "media_identification": "11234asdf34fqv",
-                        "account_id": NIL_UUID, // TODO account must exist in future implementations
+                        "account_id": anyAccountId,
                         "media_type": "RFID_ID",
                         "device_type": "App",
                         "device_name": "Android ABC"
@@ -137,7 +170,7 @@ describe("Media Mappings Service", function() {
             expect(isUuid(body.id)).to.be.true;
             mediaIdCreated = body.id;
             expect(body).to.have.a.property('media_identification').that.equals('11234asdf34fqv')
-            expect(body).to.have.a.property('account_id').that.equals(NIL_UUID)
+            expect(body).to.have.a.property('account_id').that.equals(anyAccountId)
             expect(body).to.have.a.property('media_type').that.equals('RFID_ID')
             expect(body).to.have.a.property('device_type').that.equals('App')
             expect(body).to.have.a.property('device_name').that.equals('Android ABC')
@@ -150,7 +183,7 @@ describe("Media Mappings Service", function() {
                     method: "PUT",
                     body: {
                         "media_identification": "11234asdf34fqv",
-                        "account_id": NIL_UUID, // TODO account must exist in future implementations
+                        "account_id": anyAccountId,
                         "media_type": "QR_CODE_EXACT_MATCH",
                         "device_type": "App",
                         "device_name": "Android ABC"
@@ -161,7 +194,7 @@ describe("Media Mappings Service", function() {
             expect(statusCode).to.equal(200);
             expect(isUuid(body.id)).to.be.true;
             expect(body).to.have.a.property('media_identification').that.equals('11234asdf34fqv')
-            expect(body).to.have.a.property('account_id').that.equals(NIL_UUID)
+            expect(body).to.have.a.property('account_id').that.equals(anyAccountId)
             expect(body).to.have.a.property('media_type').that.equals('QR_CODE_EXACT_MATCH')
             expect(body).to.have.a.property('device_type').that.equals('App')
             expect(body).to.have.a.property('device_name').that.equals('Android ABC')
@@ -186,7 +219,7 @@ describe("Media Mappings Service", function() {
                     method: "PUT",
                     body: {
                         "media_identification": "11234asdf34fqv",
-                        "account_id": NIL_UUID, // TODO account must exist in future implementations
+                        "account_id": anyAccountId,
                         "media_type": "RFID_ID",
                         "device_type": "App",
                         "device_name": "Android ABCD"

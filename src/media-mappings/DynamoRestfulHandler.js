@@ -6,9 +6,12 @@ const {
     ConditionalCheckFailedException } = require("@aws-sdk/client-dynamodb");
 const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
-const {DatabaseOperationException} = require('../utils/exceptions.js')
-
 const crypto = require('crypto')
+
+const {DatabaseOperationException} = require('../utils/exceptions.js');
+
+const AccountDynamoRestfulHandler = require('../accounts/DynamoRestfulHandler.js').DynamoRestfulHandler;
+const accountModule = require('../accounts/app.js');
 
 class DynamoRestfulHandler {
 
@@ -17,6 +20,8 @@ class DynamoRestfulHandler {
         this.defaultPageSize = 10;
         this.tableName = tableName;
         this.payloadValidator = payloadValidator;
+
+        this.accountDynamoRestfulHandler = new AccountDynamoRestfulHandler(accountModule.region, accountModule.tableName, accountModule.PayloadValidators);
     }
 
     async handleApiEvent(event){
@@ -81,6 +86,13 @@ class DynamoRestfulHandler {
             return {
                 statusCode: 422,
                 body: JSON.stringify(validate.errors)
+            }
+        }
+
+        if ((await this.accountDynamoRestfulHandler.getItemByID(item.account_id)) === null){
+            return {
+                statusCode: 404,
+                body: JSON.stringify({"error": "No account found with provided account_id."})
             }
         }
 

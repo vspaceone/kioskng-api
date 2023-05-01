@@ -1,4 +1,3 @@
-// TODO From this: https://medium.com/assertqualityassurance/aws-lambda-integration-test-easier-than-you-might-think-a66a9d600916
 const { fromUtf8, toUtf8 } = require("@aws-sdk/util-utf8-node");
 const { invokeLambdaForResponse, testAndExtractLambdaResponse, httpPayload, isUuid, NIL_UUID } = require("../../helper");
 const { expect } = require('chai')
@@ -8,6 +7,22 @@ describe("Transaction Service", function() {
     this.timeout(10000);
 
     let newestTransaction;
+
+    let anyAccountId = NIL_UUID;
+
+    this.beforeAll(async function(){
+        const {statusCode, body} = await invokeLambdaForResponse(
+            "AccountService", 
+            httpPayload({
+                method: "GET"
+            })
+        );
+        
+        expect(statusCode).to.equal(200);
+        expect(body).to.be.an('array');
+
+        anyAccountId = body[0].id;
+    });
 
     describe("GET", () => {
 
@@ -49,7 +64,7 @@ describe("Transaction Service", function() {
                 httpPayload({
                     method: "GET",
                     queryStringParameters: {
-                        "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5"
+                        "account_id": anyAccountId
                     }
                 })
             );
@@ -57,7 +72,7 @@ describe("Transaction Service", function() {
             expect(statusCode).to.equal(200)
             expect(body).to.be.an('array');
             for (let entry of body){
-                expect(entry).to.have.a.property('account_id').that.equals("15224736-f22c-4fb5-9496-ff7edb06c5d5")
+                expect(entry).to.have.a.property('account_id').that.equals(anyAccountId)
             }
         });
 
@@ -67,7 +82,7 @@ describe("Transaction Service", function() {
                 httpPayload({
                     method: "GET",
                     queryStringParameters: {
-                        "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                        "account_id": anyAccountId,
                         "latest": "true"
                     }
                 })
@@ -75,25 +90,10 @@ describe("Transaction Service", function() {
             
             expect(statusCode).to.equal(200)
             expect(body).to.be.an('object');
-            expect(body).to.have.a.property('account_id').that.equals("15224736-f22c-4fb5-9496-ff7edb06c5d5")
+            expect(body).to.have.a.property('account_id').that.equals(anyAccountId)
             expect(body).to.have.a.property('timestamp').that.equals(newestTransaction.timestamp)
 
         });
-
-        /*it('with path parameter ean returns 404 without body when ean does not exist', async function() {
-            const {payload, statusCode} = await invokeLambdaForResponse(
-                "TransactionService", 
-                httpPayload({
-                    method: "GET",
-                    pathParameters: {
-                        "ean": NIL_UUID
-                    }
-                })
-            );
-            
-            expect(statusCode).to.equal(404);
-            expect(payload).to.not.have.a.property('body');
-        });*/
     });
 
     describe('PUT', function(){
@@ -106,7 +106,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "PUT",
                         body: {
-                            "account_id": NIL_UUID,
+                            "account_id": anyAccountId,
                             "transaction_amount": -1000,
                             "action": "DEPOSIT"
                         }
@@ -116,13 +116,29 @@ describe("Transaction Service", function() {
                 expect(statusCode).to.equal(406);
             });
 
+            it('with non existent account id is rejected with 404', async function() {
+                const {payload, statusCode, body} = await invokeLambdaForResponse(
+                    "TransactionService", 
+                    httpPayload({
+                        method: "PUT",
+                        body: {
+                            "account_id": NIL_UUID,
+                            "transaction_amount": 1000,
+                            "action": "DEPOSIT"
+                        }
+                    })
+                );
+                
+                expect(statusCode).to.equal(404);
+            });
+
             it('is accepted and returns full payload with id', async function() {
                 let lastTransaction = await invokeLambdaForResponse(
                     "TransactionService", 
                     httpPayload({
                         method: "GET",
                         queryStringParameters: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "latest": "true"
                         }
                     })
@@ -138,7 +154,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "PUT",
                         body: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "transaction_amount": 10,
                             "action": "DEPOSIT"
                         }
@@ -146,7 +162,7 @@ describe("Transaction Service", function() {
                 );
                 
                 expect(statusCode).to.equal(200);
-                expect(body).to.have.a.property('account_id').that.equals("15224736-f22c-4fb5-9496-ff7edb06c5d5");
+                expect(body).to.have.a.property('account_id').that.equals(anyAccountId);
                 expect(body).to.have.a.property('transaction_amount').that.equals(10);
 
                 expect(body).to.have.a.property('transaction_result').that.equals(lastAmount + 10);
@@ -163,7 +179,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "PUT",
                         body: {
-                            "account_id": NIL_UUID,
+                            "account_id": anyAccountId,
                             "transaction_amount": 1000,
                             "action": "WITHDRAW"
                         }
@@ -173,13 +189,29 @@ describe("Transaction Service", function() {
                 expect(statusCode).to.equal(406);
             });
 
+            it('with non existent account id is rejected with 404', async function() {
+                const {payload, statusCode, body} = await invokeLambdaForResponse(
+                    "TransactionService", 
+                    httpPayload({
+                        method: "PUT",
+                        body: {
+                            "account_id": NIL_UUID,
+                            "transaction_amount": -1000,
+                            "action": "WITHDRAW"
+                        }
+                    })
+                );
+                
+                expect(statusCode).to.equal(404);
+            });
+
             it('is accepted and returns full payload with id', async function() {
                 let lastTransaction = await invokeLambdaForResponse(
                     "TransactionService", 
                     httpPayload({
                         method: "GET",
                         queryStringParameters: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "latest": "true"
                         }
                     })
@@ -195,7 +227,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "PUT",
                         body: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "transaction_amount": -10,
                             "action": "WITHDRAW"
                         }
@@ -203,7 +235,7 @@ describe("Transaction Service", function() {
                 );
                 
                 expect(statusCode).to.equal(200);
-                expect(body).to.have.a.property('account_id').that.equals("15224736-f22c-4fb5-9496-ff7edb06c5d5");
+                expect(body).to.have.a.property('account_id').that.equals(anyAccountId);
                 expect(body).to.have.a.property('transaction_amount').that.equals(-10);
 
                 expect(body).to.have.a.property('transaction_result').that.equals(lastAmount - 10);
@@ -220,7 +252,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "PUT",
                         body: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "action": "BUY_PRODUCT"
                         }
                     })
@@ -237,7 +269,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "PUT",
                         body: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "action": "BUY_PRODUCT",
                             "transaction_amount": "-10",
                             "product": {
@@ -257,7 +289,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "PUT",
                         body: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "action": "BUY_PRODUCT",
                             "transaction_amount": "-10"
                         }
@@ -274,7 +306,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "PUT",
                         body: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "action": "BUY_PRODUCT",
                             "product": {
                                 "ean": "000000000000"
@@ -283,7 +315,37 @@ describe("Transaction Service", function() {
                     })
                 );
 
-                console.log(body)
+                expect(statusCode).to.equal(404);
+            });
+
+            it('fails with non existent account id is rejected with 404', async function() {
+                const productResponse = await invokeLambdaForResponse(
+                    "ProductService", 
+                    httpPayload({
+                        method: "GET"
+                    })
+                );
+
+                expect(productResponse.body).to.be.an('array');
+                const anyProduct = productResponse.body[0];
+                expect(anyProduct).to.be.an('object')
+                expect(anyProduct).to.have.a.property('ean');
+                expect(anyProduct).to.have.a.property('price');
+
+                const {payload, statusCode, body} = await invokeLambdaForResponse(
+                    "TransactionService", 
+                    httpPayload({
+                        method: "PUT",
+                        body: {
+                            "account_id": NIL_UUID,
+                            "action": "BUY_PRODUCT",
+                            "product": {
+                                "ean": anyProduct.ean
+                            }
+                        }
+                    })
+                );
+                
                 expect(statusCode).to.equal(404);
             });
 
@@ -294,7 +356,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "GET",
                         queryStringParameters: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "latest": "true"
                         }
                     })
@@ -325,7 +387,7 @@ describe("Transaction Service", function() {
                     httpPayload({
                         method: "PUT",
                         body: {
-                            "account_id": "15224736-f22c-4fb5-9496-ff7edb06c5d5",
+                            "account_id": anyAccountId,
                             "action": "BUY_PRODUCT",
                             "product": {
                                 "ean": anyProduct.ean

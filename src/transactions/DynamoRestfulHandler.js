@@ -7,12 +7,14 @@ const {
 const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
 const {DatabaseOperationException, DataConflictException} = require('../utils/exceptions.js')
-const ProductDynamoRestfulHandler = require('../products/DynamoRestfulHandler.js').DynamoRestfulHandler;
 
+const ProductDynamoRestfulHandler = require('../products/DynamoRestfulHandler.js').DynamoRestfulHandler;
 const productModule = require('../products/app.js');
 const ProductPayloadValidators = productModule.PayloadValidators;
-const productRegion = productModule.region;
-const productTableName = productModule.tableName;
+
+const AccountDynamoRestfulHandler = require('../accounts/DynamoRestfulHandler.js').DynamoRestfulHandler;
+const accountModule = require('../accounts/app.js');
+const AccountPayloadValidators = accountModule.PayloadValidators;
 
 const { time } = require("console");
 const crypto = require('crypto');
@@ -25,7 +27,8 @@ class DynamoRestfulHandler {
         this.tableName = tableName;
         this.payloadValidator = payloadValidator;
 
-        this.productDynamoRestfulHandler = new ProductDynamoRestfulHandler(productRegion, productTableName, new ProductPayloadValidators())
+        this.productDynamoRestfulHandler = new ProductDynamoRestfulHandler(productModule.region, productModule.tableName, new ProductPayloadValidators())
+        this.accountDynamoRestfulHandler = new AccountDynamoRestfulHandler(accountModule.region, accountModule.tableName, new AccountPayloadValidators())
     }
 
     async handleApiEvent(event){
@@ -69,6 +72,13 @@ class DynamoRestfulHandler {
             return {
                 statusCode: 422,
                 body: JSON.stringify(validate.errors)
+            }
+        }
+
+        if ((await this.accountDynamoRestfulHandler.getItemByID(item.account_id)) === null){
+            return {
+                statusCode: 404,
+                body: JSON.stringify({"error": "No account found with provided account_id."})
             }
         }
 
