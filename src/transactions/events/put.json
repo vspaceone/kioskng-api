@@ -1,4 +1,0 @@
-{
-  "httpMethod": "PUT",
-  "body": "{\"account_id\":\"15224736-f22c-4fb5-9496-ff7edb06c5d5\",\"transaction_amount\":-5299,\"action\":\"BUY_PRODUCT\",\"authentication\":\"USERNAME_PASSWORD\",\"device_type\":\"App\",\"device_name\":\"Kiosk Kühlschrank\",\"product\":{\"ean\":\"5903175652393\"}}"
-}

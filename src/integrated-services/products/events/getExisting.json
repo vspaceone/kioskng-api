@@ -1,6 +1,6 @@
 {
   "httpMethod": "GET",
   "queryStringParameters": {
-    "ean": "5903175655004"
+    "ean": "1234567890123"
   }
 }

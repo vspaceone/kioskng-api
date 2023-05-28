@@ -1,0 +1,4 @@
+{
+  "httpMethod": "PUT",
+  "body": "{\"ean\":\"1234567890123\",\"images\":[\"https://example.eu/image\"],\"price\":2299,\"description\":\"Random Product Description\",\"name\":\"Random Product\"}"
+}

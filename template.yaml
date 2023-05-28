@@ -12,6 +12,13 @@ Parameters:
       - test
       - prod
     Description: Whether you want to deploy on test or prod
+  UserPoolId:
+    Type: String
+    Description: The cognito user pool id of your user pool.
+  ClientId:
+    Type: String
+    Description: The cognito client id of your client.
+
 
 Globals:
   Function:
@@ -23,6 +30,8 @@ Globals:
         DYNAMODB_TABLE_MEDIA_MAPPINGS: media-mappings
         DYNAMODB_TABLE_PRODUCTS: products
         DYNAMODB_TABLE_TRANSACTIONS: transactions
+        COGNITO_USER_POOL_ID: !Ref UserPoolId
+        COGNITO_CLIENT_ID: !Ref ClientId
 
 Resources:
   ProductsDynamoDBAccess:
@@ -67,7 +76,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Join [ '-', ['ProductService', !Ref Stage]]
-      CodeUri: src
+      CodeUri: src/integrated-services
       Handler: products/app.handler
       Runtime: nodejs18.x
       Architectures:
@@ -117,7 +126,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Join [ '-', ['AccountService', !Ref Stage]]
-      CodeUri: src
+      CodeUri: src/integrated-services
       Handler: accounts/app.handler
       Runtime: nodejs18.x
       Architectures:
@@ -185,7 +194,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Join [ '-', ['MediaMappingService', !Ref Stage]]
-      CodeUri: src
+      CodeUri: src/integrated-services
       Handler: media-mappings/app.handler
       Runtime: nodejs18.x
       Architectures:
@@ -269,10 +278,20 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Join [ '-', ['TransactionService', !Ref Stage]]
-      CodeUri: src
+      CodeUri: src/integrated-services
       Handler: transactions/app.handler
       Runtime: nodejs18.x
       Architectures:
         - x86_64
       Policies:
         - !Ref TransactionsDynamoDBAccess
+
+  Authorizer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Join [ '-', ['Authorizer', !Ref Stage]]
+      CodeUri: src/authorizer
+      Handler: app.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64

@@ -1,6 +1,6 @@
 {
   "httpMethod": "DELETE",
   "queryStringParameters": {
-    "ean": "5903175657190"
+    "ean": "1234567890123"
   }
 }

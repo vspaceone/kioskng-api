@@ -10,10 +10,16 @@ const {
 const NIL_UUID =  "00000000-0000-0000-0000-000000000000";
 
 let lambdaClient = new LambdaClient({
-    endpoint: 'http://127.0.0.1:3001',
-    region: 'eu-north-1',
-    tls: false
-})
+    region: 'eu-north-1'
+});
+
+if (process.env.HANDLE_LOCAL_LAMBDA_RUN || process.env.LOCAL_LAMBDA_RUN){
+    lambdaClient = new LambdaClient({
+        endpoint: 'http://127.0.0.1:3001',
+        region: 'eu-north-1',
+        tls: false
+    });
+} 
 
 function insaneSleepSeconds(seconds){
     var waitTill = new Date(new Date().getTime() + seconds * 1000);
@@ -26,7 +32,7 @@ function startLambda() {
 
 function waitForLambda(){
     let repeat = true;
-    while (repeat) {
+    while (repeat && (process.env.HANDLE_LOCAL_LAMBDA_RUN || process.env.LOCAL_LAMBDA_RUN)) {
         console.log("Waiting for lambda server to be available...")
         try {
             let tempData = request('GET', 'http://127.0.0.1:3001/');
@@ -51,6 +57,10 @@ async function stopLambda() {
     console.log("cleaned up containers")
     console.log("... Done")
     return 'Done';
+}
+
+function funcWithStage(functionName){
+    return functionName + "-test";
 }
 
 function testAndExtractLambdaResponse(response){
@@ -106,7 +116,7 @@ function isUuid(uuid, isNullable = false) {
 
 async function invokeLambdaForResponse(funcName, payload){
     const command = new InvokeCommand({
-        FunctionName: funcName,
+        FunctionName: funcWithStage(funcName),
         InvocationType: "RequestResponse",
         Payload: payload
     });
@@ -122,3 +132,4 @@ exports.httpPayload = httpPayload;
 exports.testAndExtractLambdaResponse = testAndExtractLambdaResponse;
 exports.startLambda = startLambda;
 exports.stopLambda = stopLambda;
+exports.funcWithStage = funcWithStage;
