@@ -109,6 +109,7 @@ If any differences are spotted, then an INCONSISTENCY_CORRECTION transaction wil
 |Verb|Resource|Description|
 |-:|-|-|
 |GET   | /transactions | Get all |
+|GET   | /transactions/&lt;id&gt; | Get by ID |
 |GET   | /transactions?account=&lt;ACCOUNT_ID&gt; | Get by Username |
 |GET   | /transactions?account=&lt;ACCOUNT_ID&gt;&latest=true | Gets transaction for account id with highest timestamp (=last transaction; includes "current" account balance) |
 |PUT   | /transactions | Create (Override prohibited) |
@@ -131,5 +132,3 @@ If any differences are spotted, then an INCONSISTENCY_CORRECTION transaction wil
   }
 }
 ```
-
-
